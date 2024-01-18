@@ -30,8 +30,13 @@ pub fn draw_poses(
                         &gradient.at(point.score.as_ref().unwrap().clone() as f32),
                     ));
                     ctx.begin_path();
-                    ctx.arc(point.x, point.y, 5 as f64, 0 as f64, (2 as f64) * PI)
-                        .unwrap();
+                    let mut point_z:f64 = (point.z.unwrap_or(5 as f64));
+                    ctx.arc(
+                        point.x, point.y, 
+                        (1. - point_z ) * 4., 
+                        // 6.,
+                        0 as f64, (2 as f64) * PI
+                    ).unwrap();
                     ctx.fill();
                 }
             }

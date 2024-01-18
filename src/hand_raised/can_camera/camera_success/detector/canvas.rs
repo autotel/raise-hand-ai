@@ -26,6 +26,8 @@ use self::{
     detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
     use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
 };
+
+mod body_foi;
 mod detector_frame;
 mod resize_canvas;
 mod resize_canvas_input;
@@ -206,7 +208,16 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         &Props::new()
                             .key(Some("canvas"))
                             .ref_container(&canvas_ref)
-                            .insert("style", &Style::new().background_color("orange").into()),
+                            .insert(
+                                "style",
+                                &Style::new()
+                                    .position("fixed")
+                                    .width("100vw")
+                                    .left(0)
+                                    .top(0)
+                                    .pointer_events("none")
+                                    .into(),
+                            ),
                         ().into(),
                     ),
                 ),
@@ -225,7 +236,6 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         &Style::new()
                             .position("fixed")
                             .width("100vw")
-                            .height("100vh")
                             .left(0)
                             .top(0)
                             .pointer_events("none")
