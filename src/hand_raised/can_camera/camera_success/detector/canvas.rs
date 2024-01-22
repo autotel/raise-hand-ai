@@ -24,7 +24,7 @@ use crate::{
 
 use self::{
     detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
-    use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
+    use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas, body_foi::FoiMem,
 };
 
 mod body_foi;
@@ -42,6 +42,11 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
     for Canvas<G0, G1>
 {
     fn render(&self) -> VNode {
+
+        let mut foi_mem = FoiMem {
+            past_values: [0.;32]
+        };
+        
         let container_ref = use_js_ref::<HtmlDivElement>(None);
         let video_ref = use_js_ref(None::<HtmlVideoElement>);
         let canvas_container_ref = use_js_ref(None::<HtmlDivElement>);
@@ -120,6 +125,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 &pointer_canvas,
                                 &detector,
                                 &model,
+                                & mut foi_mem,
                             )
                             .await;
                             fps.set(|_| Some(fps_counter.tick() as f64));

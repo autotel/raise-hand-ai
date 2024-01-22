@@ -1,38 +1,19 @@
 /**   body features of interest */
-use aspect_fit::{aspect_fit::aspect_fit, size::Size};
-use js_sys::{Array, Reflect};
-use real_float::Real;
-use std::{cmp::Ordering, f64::consts::PI};
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
-use wasm_tensorflow_models_pose_detection::{
-    model::Model,
-    pose::Keypoint,
-    pose_detector::{CommonEstimationConfig, EstimationConfig, PoseDetector},
-};
-use web_sys::{
-    window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
-};
-
-use crate::{
-    draw_poses::draw_poses,
-    flip_horizontal::flip_horizontal,
-    rect_in_sliced_circle::{rect_in_sliced_circle, Ratio, Slice},
-    side_maps::SIDE_MAPS,
-};
-
+use aspect_fit::size::Size;
+use js_sys::{Float64Array, Array};
+use std::f64::consts::PI;
+use web_sys::{CanvasRenderingContext2d, console::log_1, console::log };
 use wasm_tensorflow_models_pose_detection::pose::Pose;
 
-pub struct ScreenSize {
-    pub width: u32,
-    pub height: u32,
+pub struct FoiMem {
+    pub past_values: [f64;32],
 }
 
 pub fn draw(
     ctx: &CanvasRenderingContext2d,
     pose: &Pose,
-    detector_size: Size<u32>,
     view_size: Size<u32>,
+    memory:  &mut FoiMem,
 ) {
 
     ctx.clear_rect(0 as f64, 0 as f64, view_size.width as f64, view_size.height as f64);    
@@ -41,10 +22,6 @@ pub fn draw(
             // || keypoint.name == Some("right_wrist".into())
     }).unwrap();
 
-    // if(draw_point.is_none()) {
-    //     return;
-    // }
-    let reset = ctx.reset_transform();
     ctx.set_fill_style(&"blue".into());
     ctx.begin_path();
 
@@ -52,10 +29,27 @@ pub fn draw(
         draw_point.x,
         draw_point.y,
         // (1. - point_z) * 4.,
-        6.,
+        3.,
         0 as f64,
         (2 as f64) * PI,
-    )
-    .unwrap();
+    ).unwrap();
     ctx.fill();
+    ctx.close_path();
+
+    memory.past_values.rotate_right(1);
+    memory.past_values[0] = draw_point.x;
+    // how to console.log:
+    // let str = format!("{:?}",memory.past_values);
+    // log_1(&str.into());}
+    ctx.begin_path();
+    ctx.set_stroke_style(&"blue".into());
+    ctx.move_to(draw_point.x, draw_point.y);
+    let mut counter = 0;
+    for  value in memory.past_values {
+        ctx.line_to(value, (counter as f64) + draw_point.y);
+        // IDK how to get iterator, I got no internet now lol.
+        counter += 1;
+    }
+    ctx.stroke();
+
 }

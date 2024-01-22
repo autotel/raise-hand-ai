@@ -7,6 +7,14 @@ use wasm_bindgen::JsValue;
 use wasm_tensorflow_models_pose_detection::{model::Model, pose::Pose, util::get_adjacent_pairs};
 use web_sys::CanvasRenderingContext2d;
 
+fn max(a: f64, b: f64) -> f64 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
 fn rgb_to_js_value(rgb: &RGB) -> JsValue {
     format!("rgb({}, {}, {})", rgb.r, rgb.g, rgb.b).into()
 }
@@ -30,13 +38,16 @@ pub fn draw_poses(
                         &gradient.at(point.score.as_ref().unwrap().clone() as f32),
                     ));
                     ctx.begin_path();
-                    let mut point_z:f64 = (point.z.unwrap_or(5 as f64));
+                    let mut point_z: f64 = (point.z.unwrap_or(5 as f64));
                     ctx.arc(
-                        point.x, point.y, 
-                        (1. - point_z ) * 4., 
+                        point.x,
+                        point.y,
+                        max(0 as f64, (1. - point_z) * 4.),
                         // 6.,
-                        0 as f64, (2 as f64) * PI
-                    ).unwrap();
+                        0 as f64,
+                        (2 as f64) * PI,
+                    )
+                    .unwrap();
                     ctx.fill();
                 }
             }

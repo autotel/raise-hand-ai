@@ -20,7 +20,7 @@ use crate::{
     side_maps::SIDE_MAPS,
 };
 
-use super::body_foi::{self, ScreenSize};
+use super::body_foi::{self, FoiMem};
 
 
 struct Config {
@@ -48,6 +48,7 @@ pub async fn detector_frame(
     pointer_canvas: &HtmlCanvasElement,
     detector: &PoseDetector,
     model: &Model,
+    memory: & mut FoiMem,
 ) {
     let ctx = canvas
         .get_context("2d")
@@ -132,29 +133,7 @@ pub async fn detector_frame(
                 width: video.video_width(),
                 height: video.video_height(),
             },
-            Size {
-                width: canvas.width(),
-                height: canvas.height(),
-            }, 
+            memory,
         );
     }
-    // if let Some(pose) = poses.get(0) {
-    //     // let (pointer_hand, pointer_wrist_y) = SIDE_MAPS
-    //     //     .get(model)
-    //     //     .unwrap()
-    //     //     .into_iter()
-    //     //     .map(|points| (points, pose.keypoints[points.wrist].y))
-    //     //     .enumerate()
-    //     //     .min_by_key(|(_side, (_points, y))| Real::new(*y))
-    //     //     .map(|(side, (_side, y))| (side, y))
-    //     //     .unwrap();
-    
-    //     let screen_width = window().unwrap().inner_width().unwrap().as_f64().unwrap() as u32;
-    //     let screen_height = window().unwrap().inner_height().unwrap().as_f64().unwrap() as u32;
-
-    //     // pointer_canvas.set_width(screen_width as u32);
-    //     // pointer_canvas.set_height(screen_height);
-        
-        
-    // }
 }
