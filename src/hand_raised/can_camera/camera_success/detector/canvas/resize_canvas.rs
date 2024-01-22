@@ -4,7 +4,10 @@ use super::resize_canvas_input::ResizeCanvasInput;
 
 pub fn resize_canvas(input: &ResizeCanvasInput) {
     let video = input.video_ref.current().unwrap();
-    let canvas = input.canvas_ref.current().unwrap();
+    let canvases = [
+        input.canvas_skeleton_ref.current().unwrap(),
+        input.canvas_poi_ref.current().unwrap()
+    ];
     let container = input.container_ref.current().unwrap();
 
     let video_scale = Size {
@@ -22,7 +25,9 @@ pub fn resize_canvas(input: &ResizeCanvasInput) {
             ),
             &video_scale,
         );
-        canvas.set_width(fit.width);
-        canvas.set_height(fit.height);
+        canvases.map(|canvas| {
+            canvas.set_width(fit.width);
+            canvas.set_height(fit.height);
+        });
     }
 }

@@ -44,13 +44,14 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
     fn render(&self) -> VNode {
         let container_ref = use_js_ref::<HtmlDivElement>(None);
         let video_ref = use_js_ref(None::<HtmlVideoElement>);
-        let canvas_ref = use_js_ref(None::<HtmlCanvasElement>);
         let canvas_container_ref = use_js_ref(None::<HtmlDivElement>);
-        let pointer_canvas_ref = use_js_ref(None::<HtmlCanvasElement>);
+        let canvas_skeleton_ref = use_js_ref(None::<HtmlCanvasElement>);
+        let canvas_poi_ref = use_js_ref(None::<HtmlCanvasElement>);
 
         let play_future_state = use_play_promise_and_auto_resize_canvas(
             ResizeCanvasInput {
-                canvas_ref: canvas_ref.clone(),
+                canvas_skeleton_ref: canvas_skeleton_ref.clone(),
+                canvas_poi_ref: canvas_poi_ref.clone(),
                 container_ref: canvas_container_ref.clone(),
                 video_ref: video_ref.clone(),
             },
@@ -81,9 +82,9 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
         use_effect(
             {
                 let video_ref = video_ref.clone();
-                let canvas_ref = canvas_ref.clone();
+                let canvas_skeleton_ref = canvas_skeleton_ref.clone();
                 let canvas_container_ref = canvas_container_ref.clone();
-                let pointer_canvas_ref = pointer_canvas_ref.clone();
+                let canvas_poi_ref = canvas_poi_ref.clone();
                 let model_state = self.detector.model.clone();
                 let detector = self
                     .detector
@@ -98,9 +99,9 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
 
                 move || {
                     let video = video_ref.current().unwrap();
-                    let canvas = canvas_ref.current().unwrap();
+                    let canvas = canvas_skeleton_ref.current().unwrap();
                     let canvas_container = canvas_container_ref.current().unwrap();
-                    let pointer_canvas = pointer_canvas_ref.current().unwrap();
+                    let pointer_canvas = canvas_poi_ref.current().unwrap();
 
                     let (mut raf_loop, canceler) = RafLoop::new();
                     spawn_local(async move {
@@ -203,23 +204,42 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .overflow("hidden")
                                 .into(),
                         ),
-                    create_element(
-                        &"canvas".into(),
-                        &Props::new()
-                            .key(Some("canvas"))
-                            .ref_container(&canvas_ref)
-                            .insert(
-                                "style",
-                                &Style::new()
-                                    .position("fixed")
-                                    .width("100vw")
-                                    .left(0)
-                                    .top(0)
-                                    .pointer_events("none")
-                                    .into(),
-                            ),
-                        ().into(),
-                    ),
+                    (
+                        create_element(
+                            &"canvas".into(),
+                            &Props::new()
+                                .key(Some("canvas_skeleton"))
+                                .ref_container(&canvas_skeleton_ref)
+                                .insert(
+                                    "style",
+                                    &Style::new()
+                                        .position("absolute")
+                                        .width("100%")
+                                        .left(0)
+                                        .top(0)
+                                        .pointer_events("none")
+                                        .into(),
+                                ),
+                            ().into(),
+                        ),
+                        create_element(
+                            &"canvas".into(),
+                            &Props::new()
+                                .key(Some("canvas_poi"))
+                                .ref_container(&canvas_poi_ref)
+                                .insert(
+                                    "style",
+                                    &Style::new()
+                                        .position("absolute")
+                                        .width("100%")
+                                        .left(0)
+                                        .top(0)
+                                        .pointer_events("none")
+                                        .into(),
+                                ),
+                            ().into(),
+                        ),
+                    ).into(),
                 ),
                 match play_future_state {
                     FutureState::NotStarted => VNode::from("Will play video"),
@@ -229,20 +249,6 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         _ => ().into(),
                     },
                 },
-                create_element(
-                    &"canvas".into(),
-                    &Props::new().ref_container(&pointer_canvas_ref).insert(
-                        "style",
-                        &Style::new()
-                            .position("fixed")
-                            .width("100vw")
-                            .left(0)
-                            .top(0)
-                            .pointer_events("none")
-                            .into(),
-                    ),
-                    ().into(),
-                ),
             )
                 .into(),
         )
