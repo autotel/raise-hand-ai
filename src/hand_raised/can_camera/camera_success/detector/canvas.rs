@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, collections::HashMap};
 
 use fps_counter::FPSCounter;
 use js_sys::Reflect;
@@ -46,11 +46,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
 {
     fn render(&self) -> VNode {
         let mut foi_mem = FoiMem {
-            left_wrist: KeypointHistory {
-                x: [0.; POINT_HISTORY_LENGTH],
-                y: [0.; POINT_HISTORY_LENGTH],
-                ad: [0.; POINT_HISTORY_LENGTH],
-            },
+            history: HashMap::new(),
         };
 
         let container_ref = use_js_ref::<HtmlDivElement>(None);
