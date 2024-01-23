@@ -29,8 +29,6 @@ use self::{
     use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
 };
 
-
-
 mod body_foi;
 mod detector_frame;
 mod plots_frame;
@@ -64,8 +62,11 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
 
         let play_future_state = use_play_promise_and_auto_resize_canvas(
             ResizeCanvasInput {
-                canvas_skeleton_ref: canvas_skeleton_ref.clone(),
-                canvas_poi_ref: canvas_poi_ref.clone(),
+                resize_targets: [
+                    canvas_skeleton_ref.clone(),
+                    canvas_poi_ref.clone(),
+                    canvas_plot_ref.clone(),
+                ],
                 container_ref: canvas_container_ref.clone(),
                 video_ref: video_ref.clone(),
             },
@@ -139,13 +140,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 &mut foi_mem,
                             )
                             .await;
-                            
-                            plots_frame::plots_frame(
-                                &plots_canvas,
-                                &mut foi_mem,
-                            )
-                            .await;
-                            
+
+                            plots_frame::plots_frame(&plots_canvas, &mut foi_mem).await;
 
                             fps.set(|_| Some(fps_counter.tick() as f64));
                         }
@@ -290,27 +286,25 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .overflow("hidden")
                                 .into(),
                         ),
-                    (
-                        create_element(
-                            &"canvas".into(),
-                            &Props::new()
-                                .key(Some("canvas_plot"))
-                                .ref_container(&canvas_plot_ref)
-                                .insert(
-                                    "style",
-                                    &Style::new()
-                                        // .position("re")
-                                        .width("100%")
-                                        .height("100px")
-                                        .left(0)
-                                        .top(0)
-                                        .border("solid 1px black")
-                                        .pointer_events("none")
-                                        .into(),
-                                ),
-                            ().into(),
-                        ),
-                    )
+                    (create_element(
+                        &"canvas".into(),
+                        &Props::new()
+                            .key(Some("canvas_plot"))
+                            .ref_container(&canvas_plot_ref)
+                            .insert(
+                                "style",
+                                &Style::new()
+                                    // .position("re")
+                                    .width("100%")
+                                    .height("100%")
+                                    .left(0)
+                                    .top(0)
+                                    .border("solid 1px black")
+                                    .pointer_events("none")
+                                    .into(),
+                            ),
+                        ().into(),
+                    ),)
                         .into(),
                 ),
             )

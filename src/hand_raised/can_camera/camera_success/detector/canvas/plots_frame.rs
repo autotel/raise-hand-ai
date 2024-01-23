@@ -10,30 +10,44 @@ use wasm_tensorflow_models_pose_detection::{
     pose_detector::{CommonEstimationConfig, EstimationConfig, PoseDetector},
 };
 use web_sys::{
-    window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
+    console::log_1, window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement,
+    HtmlVideoElement,
 };
 
-use super::body_foi::FoiMem;
+use super::body_foi::{FoiMem, POINT_HISTORY_LENGTH};
 
+fn range_and_average(arr: &[f64]) -> (f64, f64) {
+    let mut min = arr[0];
+    let mut max = arr[0];
+    let mut sum = 0.;
+    for value in arr {
+        if *value < min {
+            min = *value;
+        }
+        if *value > max {
+            max = *value;
+        }
+        sum += *value;
+    }
+    (max - min, sum / arr.len() as f64)
+}
 
-pub async fn plots_frame(
-    canvas: &HtmlCanvasElement,
-    memory: &mut FoiMem,
-) {
+pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
     let ctx = canvas
         .get_context("2d")
         .unwrap()
         .unwrap()
         .dyn_into::<CanvasRenderingContext2d>()
         .unwrap();
-
     let canvas_size = Size {
         width: canvas.offset_width() as u32,
         height: canvas.offset_height() as u32,
     };
-    
+
     let mut graph_offset = 0.;
 
+    let px_per_step = canvas_size.width as f64 / POINT_HISTORY_LENGTH as f64;
+    let half_height = canvas_size.height as f64 / 2.;
     ctx.clear_rect(
         0 as f64,
         0 as f64,
@@ -48,27 +62,36 @@ pub async fn plots_frame(
     let mut counter = 0;
     ctx.move_to(counter as f64, 0.);
 
-    // in the future: a low-cut value. for now, just this
-    graph_offset = memory.left_wrist.x[0] - (canvas_size.height as f64 / 2.);
+    let (rng, avg) = range_and_average(&memory.left_wrist.x);
+    let graph_range = half_height / rng;
+    let graph_offset = half_height - (avg * graph_range);
 
     for value in memory.left_wrist.x {
-        ctx.line_to(counter as f64, value - graph_offset);
+        let y = graph_range * value + graph_offset;
+        ctx.line_to(counter as f64 * px_per_step, y);
         // IDK how to get iterator, I got no internet now lol.
         counter += 1;
     }
     ctx.stroke();
 
     counter = 0;
-    graph_offset = memory.left_wrist.y[0] - (canvas_size.height as f64 / 2.);
+    
+    let (rng, avg) = range_and_average(&memory.left_wrist.y);
+    let graph_range = half_height / rng;
+    let graph_offset = half_height - (avg * graph_range);
 
     ctx.begin_path();
     ctx.set_stroke_style(&"red".into());
     ctx.move_to(counter as f64, 0.);
     let mut counter = 0;
     for value in memory.left_wrist.y {
-        ctx.line_to(counter as f64, value - graph_offset);
+        let y = graph_range * value + graph_offset;
+        ctx.line_to(counter as f64 * px_per_step, y);
         // IDK how to get iterator, I got no internet now lol.
         counter += 1;
     }
     ctx.stroke();
+
+    // log value of px_per_step
+    // log_1(&px_per_step.into());
 }

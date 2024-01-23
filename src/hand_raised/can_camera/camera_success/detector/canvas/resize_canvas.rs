@@ -4,16 +4,13 @@ use super::resize_canvas_input::ResizeCanvasInput;
 
 pub fn resize_canvas(input: &ResizeCanvasInput) {
     let video = input.video_ref.current().unwrap();
-    let canvases = [
-        input.canvas_skeleton_ref.current().unwrap(),
-        input.canvas_poi_ref.current().unwrap()
-    ];
     let container = input.container_ref.current().unwrap();
 
     let video_scale = Size {
         width: video.video_width(),
         height: video.video_height(),
     };
+    
     if video_scale.width > 0 && video_scale.height > 0 {
         let fit = scale_size(
             &aspect_fit::<f64, u32>(
@@ -25,9 +22,10 @@ pub fn resize_canvas(input: &ResizeCanvasInput) {
             ),
             &video_scale,
         );
-        canvases.map(|canvas| {
-            canvas.set_width(fit.width);
-            canvas.set_height(fit.height);
-        });
+
+        for canvas in input.resize_targets.iter() {
+            canvas.current().unwrap().set_width(fit.width);
+            canvas.current().unwrap().set_height(fit.height);
+        }
     }
 }
