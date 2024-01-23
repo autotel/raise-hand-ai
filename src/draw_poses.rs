@@ -5,7 +5,7 @@ use coloriz::{Gradient, RGB};
 use js_sys::Array;
 use wasm_bindgen::JsValue;
 use wasm_tensorflow_models_pose_detection::{model::Model, pose::Pose, util::get_adjacent_pairs};
-use web_sys::CanvasRenderingContext2d;
+use web_sys::{console::log_1, CanvasRenderingContext2d};
 
 fn max(a: f64, b: f64) -> f64 {
     if a > b {
@@ -20,6 +20,7 @@ fn rgb_to_js_value(rgb: &RGB) -> JsValue {
 }
 
 pub fn draw_poses(
+    scale: &f64,
     ctx: &CanvasRenderingContext2d,
     min_pose_score: f64,
     min_point_score: f64,
@@ -38,6 +39,8 @@ pub fn draw_poses(
         canvas.width()  as f64,
         canvas.height() as f64,
     );
+    let scale = scale.clone();
+    ctx.scale(scale, scale).expect("poses scaling to client size");
 
     for pose in poses {
         if pose.score.map_or(true, |score| score >= min_pose_score) {
@@ -86,4 +89,5 @@ pub fn draw_poses(
             }
         }
     }
+    ctx.reset_transform().expect("poses reset transform")
 }

@@ -202,6 +202,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         }),
                     )),
                 )),
+                // video with canvas overlays
                 create_element(
                     &"div".into(),
                     &Props::new()
@@ -210,11 +211,11 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         .insert(
                             "style",
                             &Style::new()
-                                .position("absolute")
-                                .flex_grow(1)
+                                .position("relative")
+                                // .flex_grow(1)
                                 .overflow("hidden")
                                 .width("100vw")
-                                .height("100vh")
+                                // .height("100vh")
                                 .into(),
                         ),
                     (
@@ -283,6 +284,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         _ => ().into(),
                     },
                 },
+                // div with horizontal plots of variables
                 create_element(
                     &"div".into(),
                     &Props::new()
@@ -308,6 +310,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 &Style::new()
                                     .left(0)
                                     .top(0)
+                                    .width("100%")
                                     .border("solid 1px black")
                                     .pointer_events("none")
                                     .into(),

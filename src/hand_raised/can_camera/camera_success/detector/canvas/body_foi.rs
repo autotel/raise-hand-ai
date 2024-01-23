@@ -20,18 +20,23 @@ pub struct FoiMem {
 }
 
 pub fn draw(
+    scale: &f64,
     ctx: &CanvasRenderingContext2d,
     pose: &Pose,
     view_size: Size<u32>,
     memory: &mut FoiMem,
 ) {
+
+    let scale = scale.clone();
+    ctx.scale(scale, scale).expect("foi scaling to client size");
+
     ctx.clear_rect(
         0 as f64,
         0 as f64,
         view_size.width as f64,
         view_size.height as f64,
     );
-
+    
     ctx.set_fill_style(&"#000c".into());
     // ctx.fill_rect(
     //     0 as f64,
@@ -101,6 +106,7 @@ pub fn draw(
             ctx.stroke();
         }
     }
+    ctx.reset_transform().expect("foi caling back");
 }
 
 // how to console.log:

@@ -22,7 +22,6 @@ use crate::{
 
 use super::body_foi::{self, FoiMem};
 
-
 struct Config {
     pub show_threshold_line: bool,
     pub show_key_points: bool,
@@ -48,7 +47,7 @@ pub async fn detector_frame(
     pointer_canvas: &HtmlCanvasElement,
     detector: &PoseDetector,
     model: &Model,
-    memory: & mut FoiMem,
+    memory: &mut FoiMem,
 ) {
     let ctx = canvas
         .get_context("2d")
@@ -63,18 +62,7 @@ pub async fn detector_frame(
         .dyn_into::<CanvasRenderingContext2d>()
         .unwrap();
 
-    // let scale: f64 = aspect_fit(
-    //     &Size {
-    //         width: video.video_width(),
-    //         height: video.video_height(),
-    //     },
-    //     &Size {
-    //         width: container.offset_width() as u32,
-    //         height: container.offset_height() as u32,
-    //     },
-    // );
-    // ctx.reset_transform().unwrap();
-    // ctx.scale(scale, scale).unwrap();
+    let video_to_canvas_scale = canvas.width() as f64 / video.video_width() as f64 ;
 
     // VERY IMPORTANT: estimating poses before the video plays results in the error
     // RuntimeError: Aborted(native code called abort(). To avoid this error, just await video.play().
@@ -95,41 +83,15 @@ pub async fn detector_frame(
         poses
     };
 
-    // let transform_before = Reflect::apply(
-    //     &Reflect::get(&ctx, &"getTransform".into())
-    //         .unwrap()
-    //         .dyn_into()
-    //         .unwrap(),
-    //     &ctx.clone().dyn_into().unwrap(),
-    //     &Array::new(),
-    // )
-    // .unwrap();
-
-    // ctx.translate(f64::from(canvas.width()) / scale, 0 as f64)
-    //     .unwrap();
-    // ctx.scale(-1 as f64, 1 as f64).unwrap();
-
-    // ctx.draw_image_with_html_video_element(video, 0 as f64, 0 as f64)
-    //     .unwrap();
-
-    // Reflect::apply(
-    //     &Reflect::get(&ctx, &"setTransform".into())
-    //         .unwrap()
-    //         .dyn_into()
-    //         .unwrap(),
-    //     &ctx.clone().dyn_into().unwrap(),
-    //     &Array::from_iter(vec![&transform_before].iter()),
-    // )
-    // .unwrap();
-
-    
-
     if CONFIG.show_key_points {
-        draw_poses(&ctx, 0.3, 0.3, &poses, model);
+        draw_poses(&video_to_canvas_scale, &ctx, 0.3, 0.3, &poses, model);
     }
 
     for pose in poses {
-        body_foi::draw(&pointer_ctx, &pose, 
+        body_foi::draw(
+            &video_to_canvas_scale,
+            &pointer_ctx,
+            &pose,
             Size {
                 width: video.video_width(),
                 height: video.video_height(),
