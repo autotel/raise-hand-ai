@@ -88,32 +88,15 @@ pub fn draw(
             history.ad[0] = 0.;
             // draw y moving along x
             ctx.begin_path();
-            ctx.set_stroke_style(&"red".into());
+            ctx.set_stroke_style(&"#cde6".into());
             ctx.begin_path();
-            ctx.move_to(keypoint.x, keypoint.y);
-            let mut counter = 0;
-            for value in history.y {
-                if value == 0. {
+            // ctx.move_to(keypoint.x, keypoint.y);
+            // plot history x,y points
+            for (x, y) in history.x.iter().zip(history.y.iter()) {
+                if(*x == 0. && *y == 0.) {
                     continue;
                 }
-                ctx.line_to((counter as f64) + keypoint.x, value);
-                // IDK how to get iterator, I got no internet now lol.
-                counter += 1;
-            }
-            ctx.stroke();
-            // draw x moving along y
-            ctx.begin_path();
-            ctx.set_stroke_style(&"blue".into());
-            ctx.begin_path();
-            ctx.move_to(keypoint.x, keypoint.y);
-            let mut counter = 0;
-            for value in history.x {
-                if value == 0. {
-                    continue;
-                }
-                ctx.line_to(value, (counter as f64) + keypoint.y);
-                // IDK how to get iterator, I got no internet now lol.
-                counter += 1;
+                ctx.line_to(*x, *y);
             }
             ctx.stroke();
         }
