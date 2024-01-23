@@ -44,10 +44,19 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
         height: canvas.offset_height() as u32,
     };
 
-    let mut graph_offset = 0.;
-
     let px_per_step = canvas_size.width as f64 / POINT_HISTORY_LENGTH as f64;
     let half_height = canvas_size.height as f64 / 2.;
+
+    let plot_only: Vec<String> = vec![
+        "left_wrist".into(),
+        "right_wrist".into(),
+        // "left_elbow".into(),
+        // "right_elbow".into(),
+        // "left_shoulder".into(),
+        // "right_shoulder".into(),
+        
+    ];
+
     ctx.clear_rect(
         0 as f64,
         0 as f64,
@@ -60,7 +69,9 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
     // iterate hash map of string, history
     
     for (name, history) in &memory.history {
-    
+        if(!plot_only.contains(name)) {
+            continue;
+        }
         ctx.begin_path();
         ctx.set_stroke_style(&"blue".into());
         let mut counter = 0;
