@@ -27,7 +27,7 @@ pub fn draw_poses(
     model: &Model,
 ) {
     let worst_score_color = RGB::new(255, 0, 0);
-    let best_score_color = RGB::new(0, 255, 0);
+    let best_score_color = RGB::new(200, 210, 255);
     let gradient = Gradient::new(worst_score_color, best_score_color);
 
     for pose in poses {

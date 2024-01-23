@@ -23,12 +23,17 @@ use crate::{
 };
 
 use self::{
-    detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
-    use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas, body_foi::FoiMem,
+    body_foi::{FoiMem, KeypointHistory, POINT_HISTORY_LENGTH},
+    detector_frame::detector_frame,
+    resize_canvas_input::ResizeCanvasInput,
+    use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
 };
+
+
 
 mod body_foi;
 mod detector_frame;
+mod plots_frame;
 mod resize_canvas;
 mod resize_canvas_input;
 mod use_play_promise_and_auto_resize_canvas;
@@ -42,16 +47,20 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
     for Canvas<G0, G1>
 {
     fn render(&self) -> VNode {
-
         let mut foi_mem = FoiMem {
-            past_values: [0.;32]
+            left_wrist: KeypointHistory {
+                x: [0.; POINT_HISTORY_LENGTH],
+                y: [0.; POINT_HISTORY_LENGTH],
+                ad: [0.; POINT_HISTORY_LENGTH],
+            },
         };
-        
+
         let container_ref = use_js_ref::<HtmlDivElement>(None);
         let video_ref = use_js_ref(None::<HtmlVideoElement>);
         let canvas_container_ref = use_js_ref(None::<HtmlDivElement>);
         let canvas_skeleton_ref = use_js_ref(None::<HtmlCanvasElement>);
         let canvas_poi_ref = use_js_ref(None::<HtmlCanvasElement>);
+        let canvas_plot_ref = use_js_ref(None::<HtmlCanvasElement>);
 
         let play_future_state = use_play_promise_and_auto_resize_canvas(
             ResizeCanvasInput {
@@ -88,6 +97,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
             {
                 let video_ref = video_ref.clone();
                 let canvas_skeleton_ref = canvas_skeleton_ref.clone();
+                let canvas_plot_ref = canvas_plot_ref.clone();
                 let canvas_container_ref = canvas_container_ref.clone();
                 let canvas_poi_ref = canvas_poi_ref.clone();
                 let model_state = self.detector.model.clone();
@@ -107,6 +117,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                     let canvas = canvas_skeleton_ref.current().unwrap();
                     let canvas_container = canvas_container_ref.current().unwrap();
                     let pointer_canvas = canvas_poi_ref.current().unwrap();
+                    let plots_canvas = canvas_plot_ref.current().unwrap();
 
                     let (mut raf_loop, canceler) = RafLoop::new();
                     spawn_local(async move {
@@ -125,9 +136,17 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 &pointer_canvas,
                                 &detector,
                                 &model,
-                                & mut foi_mem,
+                                &mut foi_mem,
                             )
                             .await;
+                            
+                            plots_frame::plots_frame(
+                                &plots_canvas,
+                                &mut foi_mem,
+                            )
+                            .await;
+                            
+
                             fps.set(|_| Some(fps_counter.tick() as f64));
                         }
                     });
@@ -200,7 +219,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                 create_element(
                     &"div".into(),
                     &Props::new()
-                        .key(Some("div"))
+                        .key(Some("videos_div"))
                         .ref_container(&canvas_container_ref)
                         .insert(
                             "style",
@@ -208,6 +227,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .position("relative")
                                 .flex_grow(1)
                                 .overflow("hidden")
+                                .width("100vw")
+                                .height("100vh")
                                 .into(),
                         ),
                     (
@@ -245,7 +266,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 ),
                             ().into(),
                         ),
-                    ).into(),
+                    )
+                        .into(),
                 ),
                 match play_future_state {
                     FutureState::NotStarted => VNode::from("Will play video"),
@@ -255,6 +277,42 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         _ => ().into(),
                     },
                 },
+                create_element(
+                    &"div".into(),
+                    &Props::new()
+                        .key(Some("plotters_div"))
+                        // .ref_container(&canvas_container_ref)
+                        .insert(
+                            "style",
+                            &Style::new()
+                                .position("relative")
+                                .flex_grow(1)
+                                .overflow("hidden")
+                                .into(),
+                        ),
+                    (
+                        create_element(
+                            &"canvas".into(),
+                            &Props::new()
+                                .key(Some("canvas_plot"))
+                                .ref_container(&canvas_plot_ref)
+                                .insert(
+                                    "style",
+                                    &Style::new()
+                                        // .position("re")
+                                        .width("100%")
+                                        .height("100px")
+                                        .left(0)
+                                        .top(0)
+                                        .border("solid 1px black")
+                                        .pointer_events("none")
+                                        .into(),
+                                ),
+                            ().into(),
+                        ),
+                    )
+                        .into(),
+                ),
             )
                 .into(),
         )

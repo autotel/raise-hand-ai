@@ -123,6 +123,7 @@ pub async fn detector_frame(
     )
     .unwrap();
 
+    
     if CONFIG.show_key_points {
         draw_poses(&ctx, 0.3, 0.3, &poses, model);
     }
