@@ -171,14 +171,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         .into(),
                 ),
             (
-                create_element(
-                    &"video".into(),
-                    &Props::new()
-                        .key(Some("video"))
-                        .ref_container(&video_ref)
-                        .insert("hidden", &true.into()),
-                    ().into(),
-                ),
+
+                // FPS readout
                 h!(div).style(&Style::new().display("flex")).build((
                     h!(span).style(&Style::new().flex_grow(1)).build((
                         VNode::from("Video FPS: "),
@@ -216,7 +210,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         .insert(
                             "style",
                             &Style::new()
-                                .position("relative")
+                                .position("absolute")
                                 .flex_grow(1)
                                 .overflow("hidden")
                                 .width("100vw")
@@ -224,6 +218,25 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .into(),
                         ),
                     (
+
+                        // video element
+                        create_element(
+                            &"video".into(),
+                            &Props::new()
+                                .key(Some("video"))
+                                .ref_container(&video_ref)
+                                .insert(
+                                    "style",
+                                    &Style::new()
+                                        .width("100vw")
+                                        .height("auto")
+                                        .into(),
+                                )
+                                // .insert("hidden", &true.into())
+                                ,
+                            ().into(),
+                        ),
+                        // canvas drawing the skeleton
                         create_element(
                             &"canvas".into(),
                             &Props::new()
@@ -241,6 +254,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 ),
                             ().into(),
                         ),
+                        // canvas drawing the points of interest
                         create_element(
                             &"canvas".into(),
                             &Props::new()
@@ -278,8 +292,6 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                             "style",
                             &Style::new()
                                 .position("relative")
-                                .flex_grow(1)
-                                .overflow("hidden")
                                 .into(),
                         ),
                     (create_element(
@@ -288,11 +300,12 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                             .key(Some("canvas_plot"))
                             .ref_container(&canvas_plot_ref)
                             .insert(
+                                "data-proportion",
+                                &"0.3".into(),
+                            )
+                            .insert(
                                 "style",
                                 &Style::new()
-                                    // .position("re")
-                                    .width("100%")
-                                    .height("100%")
                                     .left(0)
                                     .top(0)
                                     .border("solid 1px black")

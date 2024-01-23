@@ -32,6 +32,17 @@ fn range_and_average(arr: &[f64]) -> (f64, f64) {
     (max - min, sum / arr.len() as f64)
 }
 
+const line_colors: [&str;8] = [
+    "#4e0250ff",
+    "#801a86ff",
+    "#723a86ff",
+    "#645986ff",
+    "#7a9e87ff",
+    "#8fe388ff",
+    "#74d085ff",
+    "#58bc82ff",
+];
+
 pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
     let ctx = canvas
         .get_context("2d")
@@ -54,7 +65,8 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
         // "right_elbow".into(),
         // "left_shoulder".into(),
         // "right_shoulder".into(),
-        
+        "left_ankle".into(),
+        "right_ankle".into(),
     ];
 
     ctx.clear_rect(
@@ -65,47 +77,50 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
     );
 
     ctx.set_fill_style(&"#000c".into());
-    
+
     // iterate hash map of string, history
-    
+    let mut point_counter = 0;
     for (name, history) in &memory.history {
-        if(!plot_only.contains(name)) {
+
+        let selected_color = line_colors[point_counter % line_colors.len()];
+
+        if (!plot_only.contains(name)) {
             continue;
         }
         ctx.begin_path();
-        ctx.set_stroke_style(&"blue".into());
-        let mut counter = 0;
-        ctx.move_to(counter as f64, 0.);
+        ctx.set_stroke_style(&selected_color.into());
+        let mut counter_x = 0;
+        ctx.move_to(counter_x as f64, 0.);
         let (rng, avg) = range_and_average(&history.x);
         let graph_range = half_height / rng;
         let graph_offset = half_height - (avg * graph_range);
 
         for value in history.x {
             let y = graph_range * value + graph_offset;
-            ctx.line_to(counter as f64 * px_per_step, y);
+            ctx.line_to(counter_x as f64 * px_per_step, y);
             // IDK how to get iterator, I got no internet now lol.
-            counter += 1;
+            counter_x += 1;
         }
         ctx.stroke();
 
-        counter = 0;
+        counter_x = 0;
 
         let (rng, avg) = range_and_average(&history.y);
         let graph_range = half_height / rng;
         let graph_offset = half_height - (avg * graph_range);
 
         ctx.begin_path();
-        ctx.set_stroke_style(&"red".into());
-        ctx.move_to(counter as f64, 0.);
-        let mut counter = 0;
+        ctx.set_stroke_style(&selected_color.into());
+        ctx.move_to(counter_x as f64, 0.);
+        let mut counter_x = 0;
         for value in history.y {
             let y = graph_range * value + graph_offset;
-            ctx.line_to(counter as f64 * px_per_step, y);
+            ctx.line_to(counter_x as f64 * px_per_step, y);
             // IDK how to get iterator, I got no internet now lol.
-            counter += 1;
+            counter_x += 1;
         }
         ctx.stroke();
-
+        point_counter += 1;
         // log value of px_per_step
         // log_1(&px_per_step.into());
     }

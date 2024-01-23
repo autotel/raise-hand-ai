@@ -30,6 +30,15 @@ pub fn draw_poses(
     let best_score_color = RGB::new(200, 210, 255);
     let gradient = Gradient::new(worst_score_color, best_score_color);
 
+    let canvas = ctx.canvas().unwrap();
+    
+    ctx.clear_rect(
+        0 as f64,
+        0 as f64,
+        canvas.width()  as f64,
+        canvas.height() as f64,
+    );
+
     for pose in poses {
         if pose.score.map_or(true, |score| score >= min_pose_score) {
             for point in &pose.keypoints {

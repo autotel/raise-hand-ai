@@ -20,7 +20,10 @@ pub fn use_play_promise_and_auto_resize_canvas(
                 let video = input.video_ref.current().unwrap();
                 video.set_src_object(Some(&media_stream));
                 match JsFuture::from(video.play().unwrap()).await {
-                    Ok(_) => Ok(()),
+                    Ok(_) => Ok({
+                        resize_canvas(&input);    
+                        ()
+                    }),
                     Err(_) => Err(()),
                 }
             }
