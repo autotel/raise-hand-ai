@@ -14,23 +14,8 @@ use web_sys::{
     HtmlVideoElement,
 };
 
-use super::body_foi::{FoiMem, POINT_HISTORY_LENGTH};
+use super::body_foi::{range_and_average, FoiMem, POINT_HISTORY_LENGTH};
 
-fn range_and_average(arr: &[f64]) -> (f64, f64) {
-    let mut min = arr[0];
-    let mut max = arr[0];
-    let mut sum = 0.;
-    for value in arr {
-        if *value < min {
-            min = *value;
-        }
-        if *value > max {
-            max = *value;
-        }
-        sum += *value;
-    }
-    (max - min, sum / arr.len() as f64)
-}
 
 const line_colors: [&str;8] = [
     "#4e0250ff",
@@ -57,16 +42,18 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
 
     let px_per_step = canvas_size.width as f64 / POINT_HISTORY_LENGTH as f64;
     let half_height = canvas_size.height as f64 / 2.;
+    let mut color_counter = 0 as usize;
+    
 
     let plot_only: Vec<String> = vec![
-        "left_wrist".into(),
+        // "left_wrist".into(),
         "right_wrist".into(),
         // "left_elbow".into(),
         // "right_elbow".into(),
         // "left_shoulder".into(),
         // "right_shoulder".into(),
-        "left_ankle".into(),
-        "right_ankle".into(),
+        // "left_ankle".into(),
+        // "right_ankle".into(),
     ];
 
     ctx.clear_rect(
@@ -78,49 +65,39 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
 
     ctx.set_fill_style(&"#000c".into());
 
-    // iterate hash map of string, history
-    let mut point_counter = 0;
-    for (name, history) in &memory.history {
+    let mut plotty = |name: &str, arr: &[f64]| {
+        let color = line_colors[color_counter];
+        color_counter += 1;
+        ctx.begin_path();
+        ctx.set_stroke_style(&color.into());
+        let mut counter_x = 0;
+        ctx.move_to(counter_x as f64, 0.);
+        let (rng, avg) = range_and_average(&arr);
+        let graph_range = half_height / rng;
+        let graph_offset = half_height - (avg * graph_range);
 
-        let selected_color = line_colors[point_counter % line_colors.len()];
+        for value in arr {
+            let y = graph_range * value + graph_offset;
+            ctx.line_to(counter_x as f64 * px_per_step, y);
+            // IDK how to get iterator, I got no internet now lol.
+            counter_x += 1;
+        }
+        ctx.stroke();
+
+    };
+
+    for (name, history) in &memory.history {
 
         if (!plot_only.contains(name)) {
             continue;
         }
-        ctx.begin_path();
-        ctx.set_stroke_style(&selected_color.into());
-        let mut counter_x = 0;
-        ctx.move_to(counter_x as f64, 0.);
-        let (rng, avg) = range_and_average(&history.x);
-        let graph_range = half_height / rng;
-        let graph_offset = half_height - (avg * graph_range);
 
-        for value in history.x {
-            let y = graph_range * value + graph_offset;
-            ctx.line_to(counter_x as f64 * px_per_step, y);
-            // IDK how to get iterator, I got no internet now lol.
-            counter_x += 1;
-        }
-        ctx.stroke();
+        plotty(&name, &history.x);
+        plotty(&name, &history.y);
+        plotty(&name, &history.center_short);
+        plotty(&name, &history.zero_side);
 
-        counter_x = 0;
-
-        let (rng, avg) = range_and_average(&history.y);
-        let graph_range = half_height / rng;
-        let graph_offset = half_height - (avg * graph_range);
-
-        ctx.begin_path();
-        ctx.set_stroke_style(&selected_color.into());
-        ctx.move_to(counter_x as f64, 0.);
-        let mut counter_x = 0;
-        for value in history.y {
-            let y = graph_range * value + graph_offset;
-            ctx.line_to(counter_x as f64 * px_per_step, y);
-            // IDK how to get iterator, I got no internet now lol.
-            counter_x += 1;
-        }
-        ctx.stroke();
-        point_counter += 1;
+        
         // log value of px_per_step
         // log_1(&px_per_step.into());
     }
