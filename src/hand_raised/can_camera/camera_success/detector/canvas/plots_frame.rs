@@ -14,7 +14,7 @@ use web_sys::{
     HtmlVideoElement,
 };
 
-use super::body_foi::{range_and_average, FoiMem, POINT_HISTORY_LENGTH};
+use super::body_foi::{average, range, range_and_average, FoiMem, POINT_HISTORY_LENGTH};
 
 
 const line_colors: [&str;8] = [
@@ -46,8 +46,8 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
     
 
     let plot_only: Vec<String> = vec![
-        // "left_wrist".into(),
-        "right_wrist".into(),
+        "left_wrist".into(),
+        // "right_wrist".into(),
         // "left_elbow".into(),
         // "right_elbow".into(),
         // "left_shoulder".into(),
@@ -72,9 +72,12 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
         ctx.set_stroke_style(&color.into());
         let mut counter_x = 0;
         ctx.move_to(counter_x as f64, 0.);
-        let (rng, avg) = range_and_average(&arr);
-        let graph_range = half_height / rng;
+        let (rng, avg) = (range(arr),average(arr));
+        let clamped_rng = rng.max(1.).min(20.);
+        let graph_range = half_height / -clamped_rng;
         let graph_offset = half_height - (avg * graph_range);
+        let text_content = format!("{}: {} - {}", name, clamped_rng, avg);
+        ctx.fill_text(&text_content, 10., 10. * color_counter as f64).expect("error drawing text");
 
         for value in arr {
             let y = graph_range * value + graph_offset;
@@ -86,16 +89,24 @@ pub async fn plots_frame(canvas: &HtmlCanvasElement, memory: &mut FoiMem) {
 
     };
 
+    let mut draw_value = |name: &str, value: f64| {
+        let text_content = format!("{}= {}", name, value);
+        ctx.fill_text(&text_content, 10., 50. as f64).expect("error drawing text");
+
+    };
+
     for (name, history) in &memory.history {
 
         if (!plot_only.contains(name)) {
             continue;
         }
 
-        plotty(&name, &history.x);
-        plotty(&name, &history.y);
-        plotty(&name, &history.center_short);
-        plotty(&name, &history.zero_side);
+        // plotty(&name, &history.x);
+        // plotty(&name, &history.y);
+        // plotty(&name, &history.center_short);
+        // plotty(&name, &history.movement_size);
+        plotty(&name, &history.beat_sawtooth);
+        draw_value(&"bpf", history.beats_per_frame);
 
         
         // log value of px_per_step
