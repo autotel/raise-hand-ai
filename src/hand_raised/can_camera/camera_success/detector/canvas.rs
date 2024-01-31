@@ -1,8 +1,8 @@
-use std::{rc::Rc, collections::HashMap};
+use std::{collections::HashMap, rc::Rc};
 
 use fps_counter::FPSCounter;
 use js_sys::Reflect;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 use wasm_react::{
     create_element, h,
@@ -12,6 +12,7 @@ use wasm_react::{
 };
 use wasm_repeated_animation_frame::RafLoop;
 use wasm_tensorflow_models_pose_detection::model::Model;
+use wasm_timer::SystemTime;
 use web_sys::{
     console::log_1, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack,
 };
@@ -23,14 +24,14 @@ use crate::{
 };
 
 use self::{
-    body_foi::{FoiMem, KeypointHistory, POINT_HISTORY_LENGTH},
-    detector_frame::detector_frame,
+    body_foi::FoiMem, detector_frame::detector_frame, keypoints_recording::KeypointRecording,
     resize_canvas_input::ResizeCanvasInput,
     use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
 };
 
 mod body_foi;
 mod detector_frame;
+mod keypoints_recording;
 mod plots_frame;
 mod resize_canvas;
 mod resize_canvas_input;
@@ -48,6 +49,10 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
         let mut foi_mem = FoiMem {
             history: HashMap::new(),
         };
+
+        let time_zero = 0;
+
+        let mut recording_buffer = KeypointRecording::new("recording");
 
         let container_ref = use_js_ref::<HtmlDivElement>(None);
         let video_ref = use_js_ref(None::<HtmlVideoElement>);
@@ -115,8 +120,11 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                     let canvas_container = canvas_container_ref.current().unwrap();
                     let pointer_canvas = canvas_poi_ref.current().unwrap();
                     let plots_canvas = canvas_plot_ref.current().unwrap();
-
                     let (mut raf_loop, canceler) = RafLoop::new();
+                    let mut terrible_timestamp = 0;
+
+                    recording_buffer.recording_start(0);
+
                     spawn_local(async move {
                         let mut fps_counter = FPSCounter::new();
                         loop {
@@ -126,6 +134,7 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                             };
 
                             let model = model_state.get().clone();
+                            terrible_timestamp += 1;
                             detector_frame(
                                 &video,
                                 &canvas,
@@ -134,6 +143,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 &detector,
                                 &model,
                                 &mut foi_mem,
+                                &mut recording_buffer,
+                                terrible_timestamp,
                             )
                             .await;
 
@@ -171,7 +182,6 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                         .into(),
                 ),
             (
-
                 // FPS readout
                 h!(div).style(&Style::new().display("flex")).build((
                     h!(span).style(&Style::new().flex_grow(1)).build((
@@ -219,7 +229,6 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .into(),
                         ),
                     (
-
                         // video element
                         create_element(
                             &"video".into(),
@@ -228,13 +237,8 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 .ref_container(&video_ref)
                                 .insert(
                                     "style",
-                                    &Style::new()
-                                        .width("100vw")
-                                        .height("auto")
-                                        .into(),
-                                )
-                                // .insert("hidden", &true.into())
-                                ,
+                                    &Style::new().width("100vw").height("auto").into(),
+                                ), // .insert("hidden", &true.into())
                             ().into(),
                         ),
                         // canvas drawing the skeleton
@@ -290,21 +294,13 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                     &Props::new()
                         .key(Some("plotters_div"))
                         // .ref_container(&canvas_container_ref)
-                        .insert(
-                            "style",
-                            &Style::new()
-                                .position("relative")
-                                .into(),
-                        ),
+                        .insert("style", &Style::new().position("relative").into()),
                     (create_element(
                         &"canvas".into(),
                         &Props::new()
                             .key(Some("canvas_plot"))
                             .ref_container(&canvas_plot_ref)
-                            .insert(
-                                "data-proportion",
-                                &"0.3".into(),
-                            )
+                            .insert("data-proportion", &"0.3".into())
                             .insert(
                                 "style",
                                 &Style::new()

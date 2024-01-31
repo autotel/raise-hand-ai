@@ -3,7 +3,7 @@ use wasm_bindgen::JsValue;
 use wasm_react::{export_components, import_components, Component, VNode};
 mod hand_raised;
 use wasm_bindgen::prelude::*;
-mod draw_poses;
+mod draw_pose;
 mod flip_horizontal;
 mod get_set;
 mod media_device_info;

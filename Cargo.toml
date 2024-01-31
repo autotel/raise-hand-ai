@@ -49,6 +49,7 @@ strum = "0.25.0"
 strum_macros = "0.25.3"
 enum-iterator = "1.4.1"
 geo = "0.27.0"
+wasm-timer = "0.2.5"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.

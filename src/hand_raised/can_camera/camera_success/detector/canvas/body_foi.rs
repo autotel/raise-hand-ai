@@ -9,7 +9,7 @@ use web_sys::{console::log, console::log_1, CanvasRenderingContext2d};
 pub const POINT_HISTORY_LENGTH: usize = 128;
 
 /** todo: maybe use linked lists instead of arrays? because of all the rotating*/
-pub struct KeypointHistory {
+pub struct AnalysisMemory {
     pub name: String,
     pub x: [f64; POINT_HISTORY_LENGTH],
     pub y: [f64; POINT_HISTORY_LENGTH],
@@ -27,8 +27,8 @@ pub struct KeypointHistory {
     pub last_beat_time_ago: u64,
 }
 pub struct FoiMem {
-    // pub left_wrist: KeypointHistory,
-    pub history: HashMap<String, KeypointHistory>,
+    // pub left_wrist: AnalysisMemory,
+    pub history: HashMap<String, AnalysisMemory>,
 }
 
 #[derive(Debug)]
@@ -138,7 +138,7 @@ pub fn draw(
         if !exists {
             memory.history.insert(
                 keypoint.name.clone().unwrap(),
-                KeypointHistory {
+                AnalysisMemory {
                     name: keypoint.name.clone().unwrap(),
                     x: [0.; POINT_HISTORY_LENGTH],
                     y: [0.; POINT_HISTORY_LENGTH],
